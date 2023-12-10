@@ -30,18 +30,50 @@ const fetchFirstData = async () => {
   return response.data;
 };
 
-const fetchMainData = async () => {
-  const endpoint = buildApiEndpoint("http://localhost:9999/api/menu");
-  const response = await axios.get(endpoint);
-  return response.data;
-};
+// const fetchMainData = async (endpoint: string) => {
+//   const fullEndpoint = buildApiEndpoint(endpoint);
+//   const response = await axios.get(fullEndpoint);
+//   return response.data;
+// };
 
 function App() {
-  const oneArr = [
-    "http://localhost:9999/api/validation?q=",
-    "http://localhost:9999/api/find_data/validation?q=",
-    "http://localhost:9999/api/find_data/message/repeat/",
-  ];
+  const {
+    data: secondData,
+    isLoading: secondDataLoading,
+    isError: secondDataError,
+    refetch: refetchSecondData,
+  } = useQuery(
+    "secondQuery",
+    async () => {
+      if (inputValue !== "") {
+        const combinedMessage = nextMessage
+          ? `${nextMessage}${inputValue}`
+          : inputValue;
+
+        const response = await axios.get(buildApiEndpoint(combinedMessage));
+        return response.data;
+      }
+    },
+    {
+      enabled: false,
+    }
+  );
+
+  useEffect(() => {
+    if (secondData) {
+      setButtonData(secondData.buttonData || []);
+
+      if (secondData.bubbleData) {
+        const { name, message } = secondData.bubbleData;
+        const newBubbleData: BubbleData = { name, message };
+        setBubbleDataArray((prevData) => [...prevData, newBubbleData]);
+      }
+
+      // Обновляем nextMessage
+      setNextMessage(secondData.next_message || null);
+    }
+  }, [secondData]);
+
   const {
     data: firstData,
     isLoading: firstDataLoading,
@@ -53,11 +85,7 @@ function App() {
     },
   });
 
-  const {
-    data: mainData,
-    isLoading: mainDataLoading,
-    isError: mainDataError,
-  } = useQuery("mainQuery", () => fetchMainData());
+  const [nextMessage, setNextMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (firstData) {
@@ -67,6 +95,7 @@ function App() {
         const initialBubbleData: BubbleData = { name, message };
         setBubbleDataArray([initialBubbleData]);
       }
+      setNextMessage(firstData.next_message || null);
     }
   }, [firstData]);
 
@@ -85,6 +114,7 @@ function App() {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (inputValue !== "") {
+      refetchSecondData();
       addNewMessage(inputValue);
     }
   };
@@ -93,7 +123,7 @@ function App() {
     setInputValue(event.target.value);
   };
 
-  if (firstDataError || mainDataError) {
+  if (firstDataError) {
     return <div>Error loading data</div>;
   }
 
@@ -105,12 +135,13 @@ function App() {
             ? bubbleDataArray.map((data, index) => <Bubble data={data} />)
             : null}
         </div>
-        {firstDataLoading || mainDataLoading ? (
+        {firstDataLoading ? (
           <div className="mr-auto">
             <IsLoadingSpin />
           </div>
         ) : null}
         {buttonData.length !== 0 ? <ButtonsGroup data={buttonData} /> : null}
+        <p>{nextMessage}</p>
         <form onSubmit={handleSubmit}>
           <div className="absolute bottom-0 w-[100%] px-5 pb-2">
             <input
