@@ -14,27 +14,15 @@ export interface BubbleDataInterface {
 
 export type ButtonDataType = string[];
 
-export interface ApiResponse {
-  bubbleData: BubbleDataInterface;
-  buttonData: ButtonDataType;
-  status: number;
-}
-
 const buildApiEndpoint = (resource: string) => {
   return `${resource}`;
 };
 
 const fetchFirstData = async () => {
-  const endpoint = buildApiEndpoint("http://localhost:9999/api/menu");
+  const endpoint = buildApiEndpoint("http://localhost:9999/api/input");
   const response = await axios.get(endpoint);
   return response.data;
 };
-
-// const fetchMainData = async (endpoint: string) => {
-//   const fullEndpoint = buildApiEndpoint(endpoint);
-//   const response = await axios.get(fullEndpoint);
-//   return response.data;
-// };
 
 function App() {
   const {
@@ -49,6 +37,14 @@ function App() {
         const combinedMessage = nextMessage
           ? `${nextMessage}${inputValue}`
           : inputValue;
+
+        const response = await axios.get(buildApiEndpoint(combinedMessage));
+        return response.data;
+      }
+      if (selectedButton !== "") {
+        const combinedMessage = nextMessage
+          ? `${nextMessage}${selectedButton}`
+          : selectedButton;
 
         const response = await axios.get(buildApiEndpoint(combinedMessage));
         return response.data;
@@ -69,7 +65,6 @@ function App() {
         setBubbleDataArray((prevData) => [...prevData, newBubbleData]);
       }
 
-      // Обновляем nextMessage
       setNextMessage(secondData.next_message || null);
     }
   }, [secondData]);
@@ -97,6 +92,7 @@ function App() {
       }
       setNextMessage(firstData.next_message || null);
     }
+    refetchSecondData();
   }, [firstData]);
 
   const [buttonData, setButtonData] = useState<ButtonData[]>([]);
@@ -104,6 +100,14 @@ function App() {
   const [bubbleDataArray, setBubbleDataArray] = useState<BubbleData[]>([]);
 
   const [inputValue, setInputValue] = useState<string>("");
+
+  const [selectedButton, setSelectedButton] = useState<string>("");
+
+  useEffect(() => {
+    setInputValue(selectedButton);
+    refetchSecondData();
+    addNewMessage(selectedButton);
+  }, [selectedButton]);
 
   const addNewMessage = (message: string) => {
     const newMessage: BubbleData = { name: "You", message };
@@ -116,20 +120,43 @@ function App() {
     if (inputValue !== "") {
       refetchSecondData();
       addNewMessage(inputValue);
+      if (secondData?.next_redirect && secondData?.next_redirect !== "") {
+        redirectToExternalSite(secondData.next_redirect);
+      }
     }
+  };
+
+  const buttonHandleSubmit = (value: string) => {
+    setSelectedButton(value);
   };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
   };
 
+  const redirectToExternalSite = (link: string) => {
+    window.open(link, "_blank");
+  };
+
+  useEffect(() => {
+    localStorage.setItem("bubbleData", JSON.stringify(bubbleDataArray));
+  }, [bubbleDataArray]);
+
+  // Извлечение объекта из localStorage
+  const retrievedUserString = localStorage.getItem("bubbleData");
+  if (retrievedUserString !== null) {
+    const retrievedUser = JSON.parse(retrievedUserString);
+    console.log(retrievedUser);
+  } else {
+    console.log("User not found in localStorage");
+  }
   if (firstDataError) {
     return <div>Error loading data</div>;
   }
 
   return (
     <div className="w-[500px] h-[100%] max-h-[600px] mx-auto bg-red-600">
-      <div className="bg-slate-200 text-black w-full  pt-2 relative pb-20 text-lg">
+      <div className="bg-slate-100 text-black w-full  pt-2 relative pb-20 text-lg">
         <div className="flex flex-col gap-5 overflow-auto pb-6">
           {bubbleDataArray.length !== 0
             ? bubbleDataArray.map((data, index) => <Bubble data={data} />)
@@ -140,8 +167,13 @@ function App() {
             <IsLoadingSpin />
           </div>
         ) : null}
-        {buttonData.length !== 0 ? <ButtonsGroup data={buttonData} /> : null}
-        <p>{nextMessage}</p>
+        {buttonData.length !== 0 ? (
+          <ButtonsGroup
+            data={buttonData}
+            buttonHandleSubmit={buttonHandleSubmit}
+          />
+        ) : null}
+
         <form onSubmit={handleSubmit}>
           <div className="absolute bottom-0 w-[100%] px-5 pb-2">
             <input
