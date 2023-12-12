@@ -25,6 +25,12 @@ const fetchFirstData = async () => {
 };
 
 function App() {
+  const [nextMessage, setNextMessage] = useState<string | null>(null);
+  const [buttonData, setButtonData] = useState<ButtonData[]>([]);
+  const [bubbleDataArray, setBubbleDataArray] = useState<BubbleData[]>([]);
+  const [inputValue, setInputValue] = useState<string>("");
+  const [selectedButton, setSelectedButton] = useState<string>("");
+
   const {
     data: secondData,
     isLoading: secondDataLoading,
@@ -73,35 +79,7 @@ function App() {
     data: firstData,
     isLoading: firstDataLoading,
     isError: firstDataError,
-  } = useQuery("firstQuery", fetchFirstData, {
-    initialData: () => {
-      const initialData = fetchFirstData();
-      return initialData;
-    },
-  });
-
-  const [nextMessage, setNextMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (firstData) {
-      setButtonData(firstData.buttonData || []);
-      if (firstData.bubbleData) {
-        const { name, message } = firstData.bubbleData;
-        const initialBubbleData: BubbleData = { name, message };
-        setBubbleDataArray([initialBubbleData]);
-      }
-      setNextMessage(firstData.next_message || null);
-    }
-    refetchSecondData();
-  }, [firstData]);
-
-  const [buttonData, setButtonData] = useState<ButtonData[]>([]);
-
-  const [bubbleDataArray, setBubbleDataArray] = useState<BubbleData[]>([]);
-
-  const [inputValue, setInputValue] = useState<string>("");
-
-  const [selectedButton, setSelectedButton] = useState<string>("");
+  } = useQuery("firstQuery", fetchFirstData);
 
   useEffect(() => {
     setInputValue(selectedButton);
@@ -135,21 +113,25 @@ function App() {
   };
 
   const redirectToExternalSite = (link: string) => {
-    window.open(link, "_blank");
+    const newWindow = window.open(link, "_blank");
+    if (newWindow) {
+      newWindow.opener = null; // отключение связи с родительским окном
+    }
   };
 
   useEffect(() => {
-    localStorage.setItem("bubbleData", JSON.stringify(bubbleDataArray));
-  }, [bubbleDataArray]);
+    if (firstData) {
+      setButtonData(firstData.buttonData || []);
+      if (firstData.bubbleData) {
+        const { name, message } = firstData.bubbleData;
+        const initialBubbleData: BubbleData = { name, message };
+        setBubbleDataArray([initialBubbleData]);
+      }
+      setNextMessage(firstData.next_message || null);
+    }
+    refetchSecondData();
+  }, [firstData]);
 
-  // Извлечение объекта из localStorage
-  const retrievedUserString = localStorage.getItem("bubbleData");
-  if (retrievedUserString !== null) {
-    const retrievedUser = JSON.parse(retrievedUserString);
-    console.log(retrievedUser);
-  } else {
-    console.log("User not found in localStorage");
-  }
   if (firstDataError) {
     return <div>Error loading data</div>;
   }
