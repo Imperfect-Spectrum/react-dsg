@@ -6,7 +6,7 @@ interface ButtonsGroupProps {
 }
 export function ButtonsGroup({ data, buttonHandleSubmit }: ButtonsGroupProps) {
   return (
-    <div className="flex flex-wrap justify-center items-center gap-5 text-lg mx-auto">
+    <div className="flex flex-col justify-center items-center gap-5 text-lg mx-auto">
       {data.map((button: string, index: number) => (
         <button
           key={index}

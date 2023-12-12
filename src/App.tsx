@@ -26,51 +26,12 @@ const fetchFirstData = async () => {
 
 function App() {
   const [nextMessage, setNextMessage] = useState<string | null>(null);
-  const [buttonData, setButtonData] = useState<ButtonData[]>([]);
-  const [bubbleDataArray, setBubbleDataArray] = useState<BubbleData[]>([]);
+  const [buttonData, setButtonData] = useState<ButtonDataType>([]);
+  const [bubbleDataArray, setBubbleDataArray] = useState<BubbleDataInterface[]>(
+    []
+  );
   const [inputValue, setInputValue] = useState<string>("");
   const [selectedButton, setSelectedButton] = useState<string>("");
-  const [loadingOldData, setLoadingOldData] = useState(false);
-  const [loadingNewData, setLoadingNewData] = useState(false);
-
-  useEffect(() => {
-    localStorage.setItem("buttonData", JSON.stringify(buttonData));
-  }, [buttonData]);
-  useEffect(() => {
-    localStorage.setItem("bubbleData", JSON.stringify(bubbleDataArray));
-  }, [bubbleDataArray]);
-  useEffect(() => {
-    localStorage.setItem("inputValue", inputValue);
-  }, [inputValue]);
-
-  useEffect(() => {
-    const retrievedButtonDataString = localStorage.getItem("buttonData");
-    const retrievedBubbleDataString = localStorage.getItem("bubbleData");
-    const retrievedInputValue = localStorage.getItem("inputValue");
-
-    if (retrievedButtonDataString !== null) {
-      const retrievedButtonData = JSON.parse(retrievedButtonDataString);
-      console.log("Retrieved Button Data:", retrievedButtonData);
-      // Можете использовать установку состояния setButtonData(retrievedButtonData);
-    } else {
-      console.log("Button Data not found in localStorage");
-    }
-
-    if (retrievedBubbleDataString !== null) {
-      const retrievedBubbleData = JSON.parse(retrievedBubbleDataString);
-      console.log("Retrieved Bubble Data:", retrievedBubbleData);
-      // Можете использовать установку состояния setBubbleDataArray(retrievedBubbleData);
-    } else {
-      console.log("Bubble Data not found in localStorage");
-    }
-
-    if (retrievedInputValue !== null  ) {
-      console.log("Retrieved Input Value:", retrievedInputValue);
-      // Можете использовать установку состояния setInputValue(retrievedInputValue);
-    } else {
-      console.log("Input Value not found in localStorage");
-    }
-  }, []);
 
   const {
     data: secondData,
@@ -122,11 +83,11 @@ function App() {
     isError: firstDataError,
   } = useQuery("firstQuery", fetchFirstData);
 
-  // useEffect(() => {
-  //   setInputValue(selectedButton);
-  //   refetchSecondData();
-  //   addNewMessage(selectedButton);
-  // }, [selectedButton]);
+  useEffect(() => {
+    setInputValue(selectedButton);
+    refetchSecondData();
+    addNewMessage(selectedButton);
+  }, [selectedButton]);
 
   const addNewMessage = (message: string) => {
     const newMessage: BubbleData = { name: "You", message };
@@ -154,10 +115,8 @@ function App() {
   };
 
   const redirectToExternalSite = (link: string) => {
-    const newWindow = window.open(link, "_blank");
-    if (newWindow) {
-      newWindow.opener = null; // отключение связи с родительским окном
-    }
+    const newLink = link + inputValue;
+    window.open(newLink, "_blank", "noopener");
   };
 
   useEffect(() => {
@@ -166,12 +125,13 @@ function App() {
       if (firstData.bubbleData) {
         const { name, message } = firstData.bubbleData;
         const initialBubbleData: BubbleData = { name, message };
+
         setBubbleDataArray([initialBubbleData]);
       }
       setNextMessage(firstData.next_message || null);
     }
     refetchSecondData();
-  }, [loadingNewData]);
+  }, [firstData]);
 
   if (firstDataError) {
     return <div>Error loading data</div>;
@@ -179,24 +139,6 @@ function App() {
 
   return (
     <div className="w-[500px] h-[100%] max-h-[600px] mx-auto ">
-      <div className="flex  gap-9">
-        {}
-        <button
-          type="button"
-          className="text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-          onClick={() => setLoadingOldData(!loadingOldData)}
-        >
-          Загрузить новый чат
-        </button>
-        <button
-          type="button"
-          className="text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-2.5 text-center me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-          onClick={() => setLoadingNewData(!loadingNewData)}
-        >
-          Восстановить старый чат
-        </button>
-      </div>
-
       <div className="bg-slate-100 text-black w-full  pt-2 relative pb-20 text-lg">
         <div className="flex flex-col gap-5 overflow-auto pb-6">
           {bubbleDataArray.length !== 0
