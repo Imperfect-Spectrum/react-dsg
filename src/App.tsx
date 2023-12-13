@@ -19,6 +19,7 @@ interface ChatState {
   next_redirect: string | null;
   buttonData: string[];
   status: number;
+  next_query: string;
 }
 
 async function fetchMessage(url: string | null, queryParams: string) {
@@ -40,6 +41,7 @@ function App() {
     next_redirect: null,
     buttonData: [],
     status: 0,
+    next_query: "",
   });
 
   const [bubbleDataArray, setBubbleDataArray] = useState<BubbleData[]>([]);
@@ -74,6 +76,10 @@ function App() {
       addNewMessage(inputValue);
       if (chatState?.next_redirect && chatState?.next_redirect !== "") {
         redirectToExternalSite(chatState.next_redirect);
+      }
+
+      if (chatState?.next_query && chatState?.next_query !== "") {
+        fetch(chatState.next_query);
       }
     }
   };
