@@ -1,113 +1,112 @@
 import "./App.css";
 import { Bubble } from "./components/bubble";
-import { BubbleData, ButtonData } from "./types";
+import { ButtonData } from "./types";
 import { ButtonsGroup } from "./components/buttonsGroup";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useQuery } from "react-query";
 import { IsLoadingSpin } from "./components/loadingSpin";
 
-export interface BubbleDataInterface {
+export type ButtonDataType = string[];
+
+interface BubbleData {
   name: string;
   message: string;
 }
+interface ChatState {
+  next_message: string;
+  bubbleData: BubbleData;
+  next_redirect: string | null;
+  buttonData: string[];
+  status: number;
+}
 
-export type ButtonDataType = string[];
+async function fetchMessage(url: string | null, queryParams: string) {
+  const data =
+    url !== ""
+      ? await axios.get(url + queryParams)
+      : await axios.get("http://localhost:9999/api/input");
 
-const buildApiEndpoint = (resource: string) => {
-  return `${resource}`;
-};
-
-const fetchFirstData = async () => {
-  const endpoint = buildApiEndpoint("http://localhost:9999/api/input");
-  const response = await axios.get(endpoint);
-  return response.data;
-};
+  return data.data;
+}
 
 function App() {
-  const [nextMessage, setNextMessage] = useState<string | null>(null);
-  const [buttonData, setButtonData] = useState<ButtonDataType>([]);
-  const [bubbleDataArray, setBubbleDataArray] = useState<BubbleDataInterface[]>(
-    []
-  );
+  const [chatState, setChatState] = useState<ChatState>({
+    next_message: "",
+    bubbleData: {
+      name: "",
+      message: "",
+    },
+    next_redirect: null,
+    buttonData: [],
+    status: 0,
+  });
+
+  const [bubbleDataArray, setBubbleDataArray] = useState<BubbleData[]>([]);
+  const [buttonDataArray, setButtonDataArray] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState<string>("");
   const [selectedButton, setSelectedButton] = useState<string>("");
 
   const {
-    data: secondData,
-    isLoading: secondDataLoading,
-    isError: secondDataError,
-    refetch: refetchSecondData,
-  } = useQuery(
-    "secondQuery",
-    async () => {
-      if (inputValue !== "") {
-        const combinedMessage = nextMessage
-          ? `${nextMessage}${inputValue}`
-          : inputValue;
-
-        const response = await axios.get(buildApiEndpoint(combinedMessage));
-        return response.data;
-      }
-      if (selectedButton !== "") {
-        const combinedMessage = nextMessage
-          ? `${nextMessage}${selectedButton}`
-          : selectedButton;
-
-        const response = await axios.get(buildApiEndpoint(combinedMessage));
-        return response.data;
-      }
-    },
+    data: fetchedData,
+    error,
+    isLoading,
+    refetch,
+  } = useQuery<ChatState, any>(
+    "myQueryKey",
+    () => fetchMessage(chatState.next_message, inputValue),
     {
       enabled: false,
     }
   );
 
-  useEffect(() => {
-    if (secondData) {
-      setButtonData(secondData.buttonData || []);
-
-      if (secondData.bubbleData) {
-        const { name, message } = secondData.bubbleData;
-        const newBubbleData: BubbleData = { name, message };
-        setBubbleDataArray((prevData) => [...prevData, newBubbleData]);
-      }
-
-      setNextMessage(secondData.next_message || null);
-    }
-  }, [secondData]);
-
-  const {
-    data: firstData,
-    isLoading: firstDataLoading,
-    isError: firstDataError,
-  } = useQuery("firstQuery", fetchFirstData);
-
-  useEffect(() => {
-    setInputValue(selectedButton);
-    refetchSecondData();
-    addNewMessage(selectedButton);
-  }, [selectedButton]);
-
   const addNewMessage = (message: string) => {
     const newMessage: BubbleData = { name: "You", message };
     setBubbleDataArray((prevData) => [...prevData, newMessage]);
     setInputValue("");
+    setSelectedButton("");
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (inputValue !== "") {
-      refetchSecondData();
+      refetch();
       addNewMessage(inputValue);
-      if (secondData?.next_redirect && secondData?.next_redirect !== "") {
-        redirectToExternalSite(secondData.next_redirect);
+      if (chatState?.next_redirect && chatState?.next_redirect !== "") {
+        redirectToExternalSite(chatState.next_redirect);
       }
     }
   };
 
+  useEffect(() => {
+    if (fetchedData) {
+      setChatState((prevChatState) => ({
+        ...prevChatState,
+        bubbleData: {
+          name: fetchedData.bubbleData.name || "",
+          message: fetchedData.bubbleData.message || "",
+        },
+        next_redirect:
+          fetchedData.next_redirect !== undefined
+            ? fetchedData.next_redirect
+            : prevChatState.next_redirect,
+        next_message: fetchedData.next_message || prevChatState.next_message,
+        buttonData: fetchedData.buttonData || prevChatState.buttonData,
+      }));
+      setBubbleDataArray((prevBubbleDataArray) => [
+        ...prevBubbleDataArray,
+        fetchedData.bubbleData,
+      ]);
+      setButtonDataArray(fetchedData.buttonData);
+    }
+  }, [fetchedData]);
+
+  useEffect(() => {
+    refetch();
+  }, []);
+
   const buttonHandleSubmit = (value: string) => {
-    setSelectedButton(value);
+    setInputValue(() => value);
   };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,24 +118,6 @@ function App() {
     window.open(newLink, "_blank", "noopener");
   };
 
-  useEffect(() => {
-    if (firstData) {
-      setButtonData(firstData.buttonData || []);
-      if (firstData.bubbleData) {
-        const { name, message } = firstData.bubbleData;
-        const initialBubbleData: BubbleData = { name, message };
-
-        setBubbleDataArray([initialBubbleData]);
-      }
-      setNextMessage(firstData.next_message || null);
-    }
-    refetchSecondData();
-  }, [firstData]);
-
-  if (firstDataError) {
-    return <div>Error loading data</div>;
-  }
-
   return (
     <div className="w-[500px] h-[100%] max-h-[600px] mx-auto ">
       <div className="bg-slate-100 text-black w-full  pt-2 relative pb-20 text-lg">
@@ -145,17 +126,18 @@ function App() {
             ? bubbleDataArray.map((data, index) => <Bubble data={data} />)
             : null}
         </div>
-        {firstDataLoading ? (
-          <div className="mr-auto">
-            <IsLoadingSpin />
-          </div>
-        ) : null}
-        {buttonData.length !== 0 ? (
-          <ButtonsGroup
-            data={buttonData}
-            buttonHandleSubmit={buttonHandleSubmit}
-          />
-        ) : null}
+        <div className="flex flex-col justify-center items-center gap-5 text-lg mx-auto">
+          {buttonDataArray.map((button: string, index: number) => (
+            <button
+              key={index}
+              type="button"
+              className="text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-full text-lg px-5 py-2.5 text-center me-2 mb-2 animate-pulse"
+              onClick={() => buttonHandleSubmit(button)}
+            >
+              {button}
+            </button>
+          ))}
+        </div>
 
         <form onSubmit={handleSubmit}>
           <div className="absolute bottom-0 w-[100%] px-5 pb-2">
