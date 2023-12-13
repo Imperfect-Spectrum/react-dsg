@@ -71,16 +71,19 @@ function App() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (chatState?.next_query && chatState?.next_query !== "") {
+      axios.get(chatState.next_query + inputValue).then((res: any) => {
+        console.log(res);
+      });
+    }
     if (inputValue !== "") {
       refetch();
+
       addNewMessage(inputValue);
       if (chatState?.next_redirect && chatState?.next_redirect !== "") {
         redirectToExternalSite(chatState.next_redirect);
       }
 
-      if (chatState?.next_query && chatState?.next_query !== "") {
-        fetch(chatState.next_query + inputValue);
-      }
       if (chatState?.next_message === "http://localhost:9999/api/help?q=") {
         refetch();
       }
@@ -101,6 +104,7 @@ function App() {
             : prevChatState.next_redirect,
         next_message: fetchedData.next_message || prevChatState.next_message,
         buttonData: fetchedData.buttonData || prevChatState.buttonData,
+        next_query: fetchedData.next_query || prevChatState.next_query,
       }));
       setBubbleDataArray((prevBubbleDataArray) => [
         ...prevBubbleDataArray,
