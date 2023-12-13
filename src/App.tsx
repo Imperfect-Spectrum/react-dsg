@@ -79,7 +79,10 @@ function App() {
       }
 
       if (chatState?.next_query && chatState?.next_query !== "") {
-        fetch(chatState.next_query);
+        fetch(chatState.next_query + inputValue);
+      }
+      if (chatState?.next_message === "http://localhost:9999/api/help?q=") {
+        refetch();
       }
     }
   };
