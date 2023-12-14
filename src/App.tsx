@@ -19,10 +19,10 @@ interface ChatState {
   next_redirect: string | null;
   buttonData: string[];
   status: number;
-  next_query: string;
+  next_query: null | string;
 }
 
-async function fetchMessage(url: string | null, queryParams: string) {
+async function fetchMessage(url: string, queryParams: string) {
   const data =
     url !== ""
       ? await axios.get(url + queryParams)
@@ -41,7 +41,7 @@ function App() {
     next_redirect: null,
     buttonData: [],
     status: 0,
-    next_query: "",
+    next_query: null,
   });
 
   const [bubbleDataArray, setBubbleDataArray] = useState<BubbleData[]>([]);
@@ -71,21 +71,17 @@ function App() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (chatState?.next_query && chatState?.next_query !== "") {
+
+    if (chatState?.next_query !== null) {
       axios.get(chatState.next_query + inputValue).then((res: any) => {
         console.log(res);
       });
     }
     if (inputValue !== "") {
       refetch();
-
       addNewMessage(inputValue);
       if (chatState?.next_redirect && chatState?.next_redirect !== "") {
         redirectToExternalSite(chatState.next_redirect);
-      }
-
-      if (chatState?.next_message === "http://localhost:9999/api/help?q=") {
-        refetch();
       }
     }
   };
@@ -101,10 +97,10 @@ function App() {
         next_redirect:
           fetchedData.next_redirect !== undefined
             ? fetchedData.next_redirect
-            : prevChatState.next_redirect,
-        next_message: fetchedData.next_message || prevChatState.next_message,
-        buttonData: fetchedData.buttonData || prevChatState.buttonData,
-        next_query: fetchedData.next_query || prevChatState.next_query,
+            : null,
+        next_message: fetchedData.next_message,
+        buttonData: fetchedData.buttonData,
+        next_query: fetchedData.next_query,
       }));
       setBubbleDataArray((prevBubbleDataArray) => [
         ...prevBubbleDataArray,
