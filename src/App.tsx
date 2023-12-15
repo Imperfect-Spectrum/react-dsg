@@ -1,7 +1,5 @@
 import "./App.css";
 import { Bubble } from "./components/bubble";
-import { ButtonData } from "./types";
-import { ButtonsGroup } from "./components/buttonsGroup";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useQuery } from "react-query";
@@ -52,7 +50,7 @@ function App() {
   const {
     data: fetchedData,
     error,
-    isLoading,
+    isFetching,
     refetch,
   } = useQuery<ChatState, any>(
     "myQueryKey",
@@ -114,8 +112,22 @@ function App() {
     refetch();
   }, []);
 
+  useEffect(() => {
+    if (chatState.next_message === "http://localhost:9999/api/help?q=") {
+      refetch();
+    }
+  }, [chatState.next_message]);
+
+  useEffect(() => {
+    if (inputValue !== "") {
+      addNewMessage(inputValue);
+      refetch();
+    }
+  }, [selectedButton]);
+
   const buttonHandleSubmit = (value: string) => {
-    setInputValue(() => value);
+    setSelectedButton(value);
+    setInputValue(value);
   };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,6 +147,12 @@ function App() {
             ? bubbleDataArray.map((data, index) => <Bubble data={data} />)
             : null}
         </div>
+
+        {isFetching ? (
+          <div className=" mb-5">
+            <IsLoadingSpin />
+          </div>
+        ) : null}
         <div className="flex flex-col justify-center items-center gap-5 text-lg mx-auto">
           {buttonDataArray.map((button: string, index: number) => (
             <button
