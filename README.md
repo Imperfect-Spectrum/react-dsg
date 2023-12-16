@@ -1,46 +1,35 @@
-# Getting Started with Create React App
+## React-DSG-ChatBot
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+The frontend part of the project, which implements a chatbot for DSG, made as part of the Mtuci hackathon.
 
-## Available Scripts
+The backend part was done by my friend in java: [backend](https://github.com/ShallBro/api-chat-bot)
 
-In the project directory, you can run:
 
-### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+https://github.com/Imperfect-Spectrum/react-dsg/assets/55977481/1b44cd14-1da2-45c8-8073-2349aa58cc9b
 
-### `npm test`
+![image](https://github.com/Imperfect-Spectrum/react-dsg/assets/55977481/9af6072a-179e-47c6-a675-533044a93ec0)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Application Description
+The application was created using React, TS, Tailwind and React-query
 
-### `npm run eject`
+The application implements a chatbot in the form of an extension to solve DSG's business problems. As part of the terms of reference, the frontend and backend parts of the application were implemented. Communication with the server is implemented using the Rest API.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## How to run
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Clone this repo
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+Clone backend repo
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+start backend
 
-## Learn More
+cd react-dsg
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Run yarn
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Run yarn start
